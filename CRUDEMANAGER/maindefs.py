@@ -92,19 +92,24 @@ def tablecontent(connection, tablename):
 
 
 def chosetable():
-    print("Escolha uma tabela:")
-    n = 1 
-    for x in showtables(connection):
-        print(f"digite {n} para tabela {x[0]}")
-        n += 1
-    inp = input("s para sair")
-    if inp != "s":
-        try:
-            ta = showtables(connection)
-            c = ta[(int(inp)-1)][0]
-            return c
-        except Error:
-            print(Error)
-    else:
-        print("saindo...")
+    while True:
+        print("\nEscolha uma tabela:")
+        tabelas = showtables(connection)
 
+        for i, tabela in enumerate(tabelas, start=1):
+            print(f"{i} → {tabela[0]}")
+        print("0 → Sair")
+
+        escolha = input("Digite o número da tabela (ou 0 para sair): ")
+
+        try:
+            opc = int(escolha)
+
+            if opc == 0:
+                return None
+            if 1 <= opc <= len(tabelas):
+                return tabelas[opc - 1][0]
+            else:
+                print(" Número inválido. Tente novamente.\n")
+        except ValueError:
+            print(" Digite somente números!\n")

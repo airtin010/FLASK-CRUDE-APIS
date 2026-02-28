@@ -37,27 +37,56 @@ while True:
     elif choice == '4':
         tablecontent(connection, chosetable())
 
+
+
     elif choice == '5':
+        table = chosetable()
         name = input("Digite o nome do usuário: ")
         email = input("Digite o email do usuário: ")
         password = input("Digite a senha do usuário: ")
-        useradd(name, email, password).add(connection)
+        useradd(name, email, password, table).add(connection)
+
+
+
+
     elif choice == '6':
-        user_id = int(input("Digite o ID do usuário a ser editado: "))
-        new_name = input("Digite o novo nome do usuário: ")
-        new_email = input("Digite o novo email do usuário: ")
-        new_password = input("Digite a nova senha do usuário: ")
-        edituser(user_id, new_name, new_email, new_password).edit(connection)
+        table = chosetable()
+        user_id = input("Digite o ID do usuário a ser editado: ")
+
+        while True:
+            action = input("oq vc vai editar?(digite nome, email ou senha)")
+            match action:
+                case "email":
+                    new_edition = input("digite o novo email")
+                    break
+                case "nome":
+                    new_edition = input("digite o novo nome")  
+                    action = "name"
+                    break
+                case "senha":
+                    action = "password"
+                    new_edition = input("digite a nova senha")
+                    break
+                case _:
+                    print("digite somente nome, senha ou email")
+        edituser(user_id, action, new_edition,table).edit(connection)
+
+
+
     elif choice == '7':
-        
+        table = chosetable()
         user_id = int(input("Digite o ID do usuário a ser deletado: "))
-        userdelete(user_id).delete(connection)
+        userdelete(user_id, table).delete(connection)
+
     elif choice == '8':
+        table = chosetable()
         user_id = int(input("Digite o ID do usuário a ser lido: "))
-        readuser(user_id).read(connection)
+        readuser(user_id, table).read(connection)
+
     elif choice == 's':
         connection.close()
         print("Conexão fechada. Saindo...")
         break
+
     else:
         print("Opção inválida. Tente novamente.")

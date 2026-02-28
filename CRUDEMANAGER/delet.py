@@ -9,8 +9,8 @@ class userdelete:
     def delete(self, connection):
         try:
             cursor = connection.cursor()
-            delete_query = "DELETE FROM %s WHERE id = %s"
-            cursor.execute(delete_query, (self.table, self.user_id,))
+            delete_query = f"DELETE FROM {self.table} WHERE id = %s"
+            cursor.execute(delete_query, (self.user_id,))
             connection.commit()
             print("Usuário deletado com sucesso!")
         except (Exception, Error) as error:
