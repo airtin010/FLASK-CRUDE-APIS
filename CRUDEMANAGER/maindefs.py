@@ -38,10 +38,11 @@ def createtable(connection, tablename):
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
-            password VARCHAR(100) NOT NULL
+            password TEXT NOT NULL
         );
         '''
         cursor.execute(create_table_query % tablename)
+        cursor.execute("ALTER TABLE %s ALTER COLUMN password TYPE TEXT;" % tablename)
         connection.commit()
         print("Tabela '%s' criada com sucesso!" % tablename )
     except (Exception, Error) as error:

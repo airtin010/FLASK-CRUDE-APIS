@@ -80,8 +80,8 @@ while True:
 
     elif choice == '8':
         table = chosetable()
-        user_id = int(input("Digite o ID do usuário a ser lido: "))
-        readuser(user_id, table).read(connection)
+        user_email = input("Digite o email do usuário a ser lido: ")
+        readuser(user_email, table).read(connection)
 
     elif choice == 's':
         connection.close()

@@ -1,7 +1,4 @@
-flask
-python-dotenv
-flask-sqlalchemy
-flask-migrate
-flask-marshmallow
-marshmallow-sqlalchemy
+Flask
+Werkzeug
 psycopg2-binary
+python-dotenv

@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2 import Error
+from werkzeug.security import generate_password_hash
 
 class useradd:
     def __init__(self, name, email, password,table):
@@ -11,8 +12,9 @@ class useradd:
     def add(self, connection):
         try:
             cursor = connection.cursor()
+            hashed_password = generate_password_hash(self.password)
             insert_query = f"INSERT INTO {self.table} (name, email, password) VALUES (%s, %s, %s)"
-            cursor.execute(insert_query, (self.name, self.email, self.password))
+            cursor.execute(insert_query, (self.name, self.email, hashed_password))
             connection.commit()
             print("Usuário adicionado com sucesso!")
         except (Exception, Error) as error:
