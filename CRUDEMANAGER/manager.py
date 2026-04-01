@@ -1,8 +1,8 @@
 from maindefs import conectar, createtable, deletetable, showtables,tablecontent, chosetable
-from add import useradd
-from edit import edituser
-from delet import userdelete
-from read import readuser
+from crud.create import useradd
+from crud.update import edituser
+from crud.delet import userdelete
+from crud.read import readuser
 
 
 connection = conectar()
