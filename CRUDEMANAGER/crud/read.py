@@ -1,78 +1,64 @@
-from multiprocessing.dummy import connection
-
 import psycopg2
 from psycopg2 import Error
 
-
-class readuser:
+class UserRead:
     def __init__(self, user_email, table):
         self.user_email = user_email
         self.table = table
 
-    def readpassword(self, connection):
+    def read_password(self, connection):
         try:
             cursor = connection.cursor()
             select_query = f"SELECT password FROM {self.table} WHERE email = %s"
             cursor.execute(select_query, (self.user_email,))
             user = cursor.fetchone()
-            if user:
-                return user[0]
-            else:
-                return None
+            return user[0] if user else None
         except (Exception, Error) as error:
-            print("Error while reading user", error)
+            print("Error while reading user password:", error)
             return None
 
-    def reademail(self, connection):
+    def read_email(self, connection):
         try:
             cursor = connection.cursor()
             select_query = f"SELECT email FROM {self.table} WHERE email = %s"
             cursor.execute(select_query, (self.user_email,))
             user = cursor.fetchone()
-            if user:
-                return user[0]
-            else:
-                return None
+            return user[0] if user else None
         except (Exception, Error) as error:
-            print("Error while reading user", error)
+            print("Error while reading user email:", error)
             return None
         
-    def readid(self, connection):
+    def read_id(self, connection):
         try:
             cursor = connection.cursor()
             select_query = f"SELECT id FROM {self.table} WHERE email = %s"
             cursor.execute(select_query, (self.user_email,))
             user = cursor.fetchone()
-            if user:
-                return user[0]
-            else:
-                return None
+            return user[0] if user else None
         except (Exception, Error) as error:
-            print("Error while reading user", error)
+            print("Error while reading user ID:", error)
             return None
         
-    def idverifyed(self, connection):
+    def is_verified(self, connection):
         try:
             cursor = connection.cursor()
             select_query = f"SELECT verification_token FROM {self.table} WHERE email = %s"
             cursor.execute(select_query, (self.user_email,))
             user = cursor.fetchone()
-            if user and user[0] == 'verified':
-                return True
-            else:
-                return False
+            return True if user and user[0] == 'verified' else False
         except (Exception, Error) as error:
-            print("Error while reading user", error)
+            print("Error while checking verification status:", error)
+            return False
 
-    def read(self, connection):
+    def read_profile(self, connection):
         try:
             cursor = connection.cursor()
             select_query = f"SELECT id, name, email FROM {self.table} WHERE email = %s"
             cursor.execute(select_query, (self.user_email,))
             user = cursor.fetchone()
             if user:
-                print("ID: %s, Name: %s, Email: %s" % (user[0], user[1], user[2]))
+                print(f"ID: {user[0]}, Name: {user[1]}, Email: {user[2]}")
             else:
-                print("Usuário não encontrado.")
+                print("User not found.")
         except (Exception, Error) as error:
-            print("Error while reading user", error)
+            print("Error while reading user profile:", error)

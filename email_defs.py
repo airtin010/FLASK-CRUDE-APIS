@@ -4,9 +4,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from itsdangerous import URLSafeTimedSerializer
 from flask import url_for
-from CRUDEMANAGER.crud.read import readuser
-from CRUDEMANAGER.maindefs import conectar
-from CRUDEMANAGER.crud.update import edituser
+from CRUDEMANAGER.crud.read import UserRead
+from CRUDEMANAGER.maindefs import connect
+from CRUDEMANAGER.crud.update import UserEdit
 
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASS = os.getenv('EMAIL_PASS')
@@ -19,9 +19,9 @@ def send_reset_email(email, reset_url):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
     msg['To'] = email
-    msg['Subject'] = 'Redefinição de Senha'
+    msg['Subject'] = 'Password Reset Request'
 
-    body = f'Clique no link para redefinir sua senha: {reset_url}'
+    body = f'Please click the link to reset your password: {reset_url}'
     msg.attach(MIMEText(body, 'plain'))
 
     try:
@@ -30,10 +30,10 @@ def send_reset_email(email, reset_url):
         text = msg.as_string()
         server.sendmail(EMAIL_USER, email, text)
         server.quit()
-        print(f"Email enviado com sucesso para {email}")
+        print(f"Email sent successfully to {email}")
         return True
     except Exception as e:
-        print(f"Erro ao enviar email: {e}")
+        print(f"Error sending email: {e}")
         return False
 
 def generate_reset_token(email):
@@ -52,26 +52,19 @@ def send_password_reset_email(email, app):
     return send_reset_email(email, reset_url)
 
 def update_password(email, new_password, table='databasedusers'):
-    connection = conectar()
+    connection = connect()
     if not connection:
         return False
     try:
-        user_id = readuser(email, table).readid(connection)
-        edituser(user_id, "password", new_password, table).edit(connection)
-        print(f"Senha atualizada com sucesso para {email}")
+        user_id = UserRead(email, table).read_id(connection)
+        UserEdit(user_id, "password", new_password, table).update(connection)
+        print(f"Password updated successfully for {email}")
         return True
     except Exception as e:
-        print(f"Erro ao atualizar senha: {e}")
+        print(f"Error updating password: {e}")
         return False
     finally:
         connection.close()
-
-
-
-
-
-#email verification
-
 
 def generate_verification_token(email):
     return serializer.dumps(email, salt='email-confirm-salt')
@@ -90,15 +83,15 @@ def send_verification_email(email, name):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
     msg['To'] = email
-    msg['Subject'] = 'Confirme seu endereço de e-mail'
+    msg['Subject'] = 'Confirm Your Email Address'
 
     body = f"""
-    Olá, {name}!
+    Hello, {name}!
 
-    Obrigado por se cadastrar. Para ativar sua conta, clique no link abaixo:
+    Thank you for registering. To activate your account, please click the link below:
     {confirm_url}
 
-    Este link expira em 24 horas.
+    This link will expire in 24 hours.
     """
     
     msg.attach(MIMEText(body, 'plain'))
@@ -108,7 +101,8 @@ def send_verification_email(email, name):
         server.login(EMAIL_USER, EMAIL_PASS)
         server.sendmail(EMAIL_USER, email, msg.as_string())
         server.quit()
+        print(f"Verification email sent to {email}")
         return True
     except Exception as e:
-        print(f"Erro ao enviar e-mail de confirmação: {e}")
+        print(f"Error sending verification email: {e}")
         return False

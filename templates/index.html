@@ -1,37 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auth Forms</title>
+    <title>Dashboard - CRUDEMANAGER</title>
 </head>
 <body>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
+
+    <div class="container">
+        <div class="dashboard-container bg-white p-5 rounded shadow-sm text-center">
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
                 {% for category, message in messages %}
-                    <li><strong>{{ category }}:</strong> {{ message }}</li>
+                  <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
                 {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
+              {% endif %}
+            {% endwith %}
 
-    <h1>Registration</h1>
+            <h1 class="mb-4">Bem-vindo!</h1>
+            
+            <p class="lead">Você está conectado com o e-mail:</p>
+            <h4 class="text-primary mb-5">{{ session['user_email'] }}</h4>
 
-    <form action="{{ url_for('register') }}" method="POST">
-        <input type="text" name="name" placeholder="Name" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-        <button type="submit">Submit</button>
-    </form>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('logout') }}" class="btn btn-danger btn-lg">Log Out</a>
+            </div>
 
-    <h1>Login</h1>
-    <form action="{{ url_for('login') }}" method="POST">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <a href="{{ url_for('forgot') }}">Forgot password?</a>
-        <button type="submit">Submit</button>
-    </form>
+        </div>
+    </div>
 </body>
 </html>

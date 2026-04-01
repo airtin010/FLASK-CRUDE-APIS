@@ -11,8 +11,7 @@ PORT = os.getenv("PORT")
 DATABASE = os.getenv("DATABASE")
 DB_USER = os.getenv("DB_USER")
 
-
-def conectar():
+def connect():
     try:
         connection = psycopg2.connect(
             user=DB_USER,
@@ -21,20 +20,19 @@ def conectar():
             port=PORT,
             database=DATABASE
         )
-
-        print("Conexão com PostgreSQL bem-sucedida!")
+        print("PostgreSQL connection successful!")
         return connection
     except (Exception, Error) as error:
-        print("Error while connecting to PostgreSQL", error)
+        print("Error while connecting to PostgreSQL:", error)
         return None
     
-connection = conectar()
+connection = connect()
 
-def createtable(connection, tablename):
+def create_table(connection, table_name):
     try:
         cursor = connection.cursor()
-        create_table_query = '''
-        CREATE TABLE IF NOT EXISTS %s (
+        create_table_query = f'''
+        CREATE TABLE IF NOT EXISTS {table_name} (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
@@ -42,76 +40,67 @@ def createtable(connection, tablename):
             verification_token TEXT
         );
         '''
-        cursor.execute(create_table_query % tablename)
-        cursor.execute("ALTER TABLE %s ALTER COLUMN password TYPE TEXT;" % tablename)
+        cursor.execute(create_table_query)
+        cursor.execute(f"ALTER TABLE {table_name} ALTER COLUMN password TYPE TEXT;")
         connection.commit()
-        print("Tabela '%s' criada com sucesso!" % tablename )
+        print(f"Table '{table_name}' created successfully!")
     except (Exception, Error) as error:
-        print("Error while creating table", error)
+        print("Error while creating table:", error)
 
-def deletetable(connection, tablename):
+def delete_table(connection, table_name):
     try:
         cursor = connection.cursor()
-        delete_table_query = "DROP TABLE IF EXISTS %s;"
-        cursor.execute(delete_table_query % tablename)
+        delete_table_query = f"DROP TABLE IF EXISTS {table_name};"
+        cursor.execute(delete_table_query)
         connection.commit()
-        print("Tabela '%s' deletada com sucesso!" % tablename)
+        print(f"Table '{table_name}' deleted successfully!")
     except (Exception, Error) as error:
-        print("Error while deleting table", error)
+        print("Error while deleting table:", error)
 
-def showtables(connection, x=0):
-    if x == 1:
-        try:
-            cursor = connection.cursor()
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public';")
-            tables = cursor.fetchall()
-            print("Tabelas no banco de dados:")
+def show_tables(connection, verbose=0):
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public';")
+        tables = cursor.fetchall()
+        if verbose == 1:
+            print("Tables in the database:")
             for table in tables:
                 print(table[0])
-            return tables
-        except (Exception, Error) as error:
-            print("Error while fetching tables", error)
-    else:
-        try:
-            cursor = connection.cursor()
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public';")
-            tables = cursor.fetchall()
-            return tables
-        except (Exception, Error) as error:
-            print("Error while fetching tables", error)
+        return tables
+    except (Exception, Error) as error:
+        print("Error while fetching tables:", error)
+        return []
 
-
-def tablecontent(connection, tablename):
+def get_table_content(connection, table_name):
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM %s;" % tablename)
-        table = cursor.fetchall()
-        print("Conteúdo da tabela '%s':" % tablename)
-        for content in table:
-            print(content)
+        cursor.execute(f"SELECT * FROM {table_name};")
+        rows = cursor.fetchall()
+        print(f"Content of table '{table_name}':")
+        for row in rows:
+            print(row)
     except (Exception, Error) as error:
-        print("Error while fetching table content", error)
+        print("Error while fetching table content:", error)
 
-
-def chosetable():
+def choose_table():
     while True:
-        print("\nEscolha uma tabela:")
-        tabelas = showtables(connection)
+        print("\nChoose a table:")
+        tables = show_tables(connection)
 
-        for i, tabela in enumerate(tabelas, start=1):
-            print(f"{i} → {tabela[0]}")
-        print("0 → Sair")
+        for i, table in enumerate(tables, start=1):
+            print(f"{i} → {table[0]}")
+        print("0 → Exit")
 
-        escolha = input("Digite o número da tabela (ou 0 para sair): ")
+        choice = input("Enter the table number (or 0 to exit): ")
 
         try:
-            opc = int(escolha)
+            option = int(choice)
 
-            if opc == 0:
+            if option == 0:
                 return None
-            if 1 <= opc <= len(tabelas):
-                return tabelas[opc - 1][0]
+            if 1 <= option <= len(tables):
+                return tables[option - 1][0]
             else:
-                print(" Número inválido. Tente novamente.\n")
+                print("Invalid number. Please try again.\n")
         except ValueError:
-            print(" Digite somente números!\n")
+            print("Please enter numbers only!\n")

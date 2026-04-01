@@ -2,22 +2,22 @@ import psycopg2
 from psycopg2 import Error
 from werkzeug.security import generate_password_hash
 
-class edituser:
-    def __init__(self, user_id, action, new_edition, table):
+class UserEdit:
+    def __init__(self, user_id, column_name, new_value, table):
         self.user_id = user_id
-        self.action = action
-        self.new_edition = new_edition
+        self.column_name = column_name
+        self.new_value = new_value
         self.table = table
 
-
-    def edit(self, connection):
-        if self.action == "password":
-            self.new_edition = generate_password_hash(self.new_edition) # Faz o hash da nova senha para segurança
+    def update(self, connection):
+        if self.column_name == "password":
+            self.new_value = generate_password_hash(self.new_value)
+            
         try:
             cursor = connection.cursor()
-            update_query = f"UPDATE {self.table} SET {self.action} = %s WHERE id = %s"
-            cursor.execute(update_query, (self.new_edition, self.user_id))
+            update_query = f"UPDATE {self.table} SET {self.column_name} = %s WHERE id = %s"
+            cursor.execute(update_query, (self.new_value, self.user_id))
             connection.commit()
-            print("Usuário editado com sucesso!")
+            print("User updated successfully!")
         except (Exception, Error) as error:
-            print("Error while editing user", error)
+            print("Error while updating user:", error)
