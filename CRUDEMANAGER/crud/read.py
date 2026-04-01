@@ -36,6 +36,20 @@ class readuser:
         except (Exception, Error) as error:
             print("Error while reading user", error)
             return None
+        
+    def readid(self, connection):
+        try:
+            cursor = connection.cursor()
+            select_query = f"SELECT id FROM {self.table} WHERE email = %s"
+            cursor.execute(select_query, (self.user_email,))
+            user = cursor.fetchone()
+            if user:
+                return user[0]
+            else:
+                return None
+        except (Exception, Error) as error:
+            print("Error while reading user", error)
+            return None
 
     def read(self, connection):
         try:

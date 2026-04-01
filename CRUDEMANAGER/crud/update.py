@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2 import Error
+from werkzeug.security import generate_password_hash
 
 class edituser:
     def __init__(self, user_id, action, new_edition, table):
@@ -10,6 +11,8 @@ class edituser:
 
 
     def edit(self, connection):
+        if self.action == "password":
+            self.new_edition = generate_password_hash(self.new_edition) # Faz o hash da nova senha para segurança
         try:
             cursor = connection.cursor()
             update_query = f"UPDATE {self.table} SET {self.action} = %s WHERE id = %s"
