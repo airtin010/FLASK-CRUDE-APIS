@@ -50,6 +50,19 @@ class readuser:
         except (Exception, Error) as error:
             print("Error while reading user", error)
             return None
+        
+    def idverifyed(self, connection):
+        try:
+            cursor = connection.cursor()
+            select_query = f"SELECT verification_token FROM {self.table} WHERE email = %s"
+            cursor.execute(select_query, (self.user_email,))
+            user = cursor.fetchone()
+            if user and user[0] == 'verified':
+                return True
+            else:
+                return False
+        except (Exception, Error) as error:
+            print("Error while reading user", error)
 
     def read(self, connection):
         try:

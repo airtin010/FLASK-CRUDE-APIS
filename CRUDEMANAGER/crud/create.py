@@ -13,8 +13,8 @@ class useradd:
         try:
             cursor = connection.cursor()
             hashed_password = generate_password_hash(self.password)
-            insert_query = f"INSERT INTO {self.table} (name, email, password) VALUES (%s, %s, %s)"
-            cursor.execute(insert_query, (self.name, self.email, hashed_password))
+            insert_query = f"INSERT INTO {self.table} (name, email, password, verification_token) VALUES (%s, %s, %s, %s)"
+            cursor.execute(insert_query, (self.name, self.email, hashed_password, 'notverified'))
             connection.commit()
             print("Usuário adicionado com sucesso!")
         except (Exception, Error) as error:

@@ -4,7 +4,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from CRUDEMANAGER.maindefs import conectar, createtable
 from CRUDEMANAGER.crud.create import useradd        
 from CRUDEMANAGER.crud.read import readuser
-from email_reset import send_password_reset_email, verify_reset_token, update_password
+from CRUDEMANAGER.crud.update import edituser
+from email_defs import send_password_reset_email, verify_reset_token, update_password, verify_confirmation_token, send_verification_email
 
 
 
@@ -28,14 +29,19 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        
-        stored_hash = readuser(email, table).readpassword(connection)
-        if stored_hash and check_password_hash(stored_hash, password):
-            flash('Login successful!', 'success')
-            return redirect(url_for('index'))
+
+        if readuser(email, table).idverifyed(connection):
+            stored_hash = readuser(email, table).readpassword(connection)
+            if stored_hash and check_password_hash(stored_hash, password):
+                flash('Login successful!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid email or password.', 'error')
+                return redirect(url_for('login'))
         else:
-            flash('Invalid email or password.', 'error')
+            flash('Email not verified. Please check your email for the verification link.', 'error')
             return redirect(url_for('login'))
+        
     return render_template('index.html')
 
 
@@ -56,7 +62,8 @@ def register():
             return redirect(url_for('register'))
         
         useradd(name, email, password, table).add(connection)
-        flash('Registration successful. Please log in.', 'success')
+        send_verification_email(email, app)
+        flash('Registration successful. Please check your email for the verification link.', 'success')
         return redirect(url_for('login'))
     return render_template('index.html')
 
@@ -95,6 +102,18 @@ def reset_password(token):
         else:
             flash('Error updating password.', 'error')
     return render_template('reset_password.html')
+
+
+@app.route('/confirm/<token>')
+def confirm_email(token):
+    email = verify_confirmation_token(token)
+    if email is None:
+        return "O link de confirmação é inválido ou expirou.", 400
+    
+    user_id = readuser(email, table).readid(connection)
+    edituser(user_id, "verification_token", "verified", table).edit(connection)
+    
+    return "E-mail confirmado com sucesso! Agora você pode fazer login."
 
 
 if __name__ == '__main__':

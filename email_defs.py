@@ -65,3 +65,50 @@ def update_password(email, new_password, table='databasedusers'):
         return False
     finally:
         connection.close()
+
+
+
+
+
+#email verification
+
+
+def generate_verification_token(email):
+    return serializer.dumps(email, salt='email-confirm-salt')
+
+def verify_confirmation_token(token, max_age=86400):
+    try:
+        email = serializer.loads(token, salt='email-confirm-salt', max_age=max_age)
+        return email
+    except:
+        return None
+
+def send_verification_email(email, name):
+    token = generate_verification_token(email)
+    confirm_url = url_for('confirm_email', token=token, _external=True)
+    
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL_USER
+    msg['To'] = email
+    msg['Subject'] = 'Confirme seu endereço de e-mail'
+
+    body = f"""
+    Olá, {name}!
+
+    Obrigado por se cadastrar. Para ativar sua conta, clique no link abaixo:
+    {confirm_url}
+
+    Este link expira em 24 horas.
+    """
+    
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
+        server.login(EMAIL_USER, EMAIL_PASS)
+        server.sendmail(EMAIL_USER, email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de confirmação: {e}")
+        return False
