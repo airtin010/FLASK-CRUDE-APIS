@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash
 from functools import wraps
 from datetime import timedelta
 
-from CRUDEMANAGER.maindefs import connect, create_table
+from CRUDEMANAGER.maindefs import connect, create_table, is_password_strong
 from CRUDEMANAGER.crud.create import UserAdd        
 from CRUDEMANAGER.crud.read import UserRead
 from CRUDEMANAGER.crud.update import UserEdit
@@ -59,29 +59,39 @@ def login():
         else:
             flash('Invalid email or password.', 'error')
             return redirect(url_for('login'))
-        
-    return render_template('login.html')
+    
+    return render_template('login_register.html')
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
+    name = request.form.get('name', '')
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    confirm_password = request.form.get('confirm_password', '')
 
-        if confirm_password != password:
-            flash('Passwords do not match.', 'error')
-            return redirect(url_for('register'))
-        elif UserRead(email, table).read_email(connection):
-            flash('Email already registered.', 'error')
-            return redirect(url_for('register'))
-        
+    if confirm_password != password:
+        flash('Passwords do not match.', 'error')
+        return render_template('login_register.html', name=name, email=email)
+
+    is_valid, message = is_password_strong(password)
+    if not is_valid:
+        flash(message, 'error')
+        return render_template('login_register.html', name=name, email=email)
+
+    user_exists = UserRead(email, table).read_email(connection)
+    
+    if user_exists:
+        flash('Email already registered.', 'error')
+        return render_template('login_register.html', name=name)
+    
+    try:
         UserAdd(name, email, password, table).add(connection)
         send_verification_email(email, name)
-        flash('Registration successful. Please check your email for the verification link.', 'success')
+        flash('Registration successful! Please check your email.', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html')
+    except Exception as e:
+        flash(f'Error during registration: {e}', 'error')
+        return render_template('login_register.html', name=name, email=email)
     
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
@@ -103,29 +113,40 @@ def reset_password(token):
     if not email:
         flash('Invalid or expired token.', 'error')
         return redirect(url_for('forgot'))
+
     if request.method == 'POST':
         new_password = request.form['password']
         confirm_password = request.form['confirm_password']
+
         if new_password != confirm_password:
             flash('Passwords do not match.', 'error')
             return redirect(url_for('reset_password', token=token))
+
+        is_valid, message = is_password_strong(new_password)
+        if not is_valid:
+            flash(message, 'error')
+            return redirect(url_for('reset_password', token=token))
+        
         if update_password(email, new_password, table):
             flash('Password updated successfully. Please log in.', 'success')
             return redirect(url_for('login'))
         else:
             flash('Error updating password.', 'error')
+            
     return render_template('reset_password.html')
 
 @app.route('/confirm/<token>')
 def confirm_email(token):
     email = verify_confirmation_token(token)
     if email is None:
-        return "The confirmation link is invalid or has expired.", 400
+        flash('The confirmation link is invalid or has expired.', 'error')
+        return redirect(url_for('login'))
     
     user_id = UserRead(email, table).read_id(connection)
     UserEdit(user_id, "verification_token", "verified", table).update(connection)
     
-    return "Email confirmed successfully! You can now log in."
+    flash('Email confirmed successfully! You can now log in.', 'success')
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)

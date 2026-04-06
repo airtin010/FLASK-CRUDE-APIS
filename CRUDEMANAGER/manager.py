@@ -1,92 +1,90 @@
-from maindefs import conectar, createtable, deletetable, showtables,tablecontent, chosetable
-from crud.create import useradd
-from crud.update import edituser
-from crud.delet import userdelete
-from crud.read import readuser
+from maindefs import connect, create_table, delete_table, show_tables, get_table_content, choose_table
+from crud.create import UserAdd
+from crud.update import UserEdit
+from crud.delete import UserDelete
+from crud.read import UserRead
 
+connection = connect()
 
-connection = conectar()
-
+if not connection:
+    print("Failed to establish database connection. Exiting...")
+    exit()
 
 while True:
-    print("\nMenu:")
-    print("1. Criar tabela")
-    print("2. Deletar tabela")
-    print("3. Mostrar tabelas")
-    print("4. Mostrar conteúdo da tabela")
-    print("5. Adicionar usuário")
-    print("6. Editar usuário")
-    print("7. Deletar usuário")
-    print("8. Ler usuário")
-    print("s. Sair")
+    print("\n--- CRUDEMANAGER System ---")
+    print("1. Create Table")
+    print("2. Delete Table")
+    print("3. List All Tables")
+    print("4. View Table Content")
+    print("5. Add User")
+    print("6. Edit User")
+    print("7. Delete User")
+    print("8. Read User (by Email)")
+    print("s. Exit")
 
-    choice = input("Escolha uma opção: ")
+    choice = input("\nSelect an option: ").lower()
 
     if choice == '1':
-        tablename = input("Digite o nome da tabela a ser criada: ou s para sair ")
-        if tablename != "s":
-            createtable(connection, tablename)
-
+        name = input("Enter table name to create (or 's' to cancel): ")
+        if name != 's':
+            create_table(connection, name)
 
     elif choice == '2':
-        deletetable(connection, chosetable())
+        table = choose_table(connection)
+        if table:
+            delete_table(connection, table)
 
     elif choice == '3':
-        showtables(connection, 1)
+        show_tables(connection)
 
     elif choice == '4':
-        tablecontent(connection, chosetable())
-
-
+        table = choose_table(connection)
+        if table:
+            get_table_content(connection, table)
 
     elif choice == '5':
-        table = chosetable()
-        name = input("Digite o nome do usuário: ")
-        email = input("Digite o email do usuário: ")
-        password = input("Digite a senha do usuário: ")
-        useradd(name, email, password, table).add(connection)
-
-
-
+        table = choose_table(connection)
+        if table:
+            name = input("User Name: ")
+            email = input("User Email: ")
+            pwd = input("User Password: ")
+            UserAdd(name, email, pwd, table).add(connection)
 
     elif choice == '6':
-        table = chosetable()
-        user_id = input("Digite o ID do usuário a ser editado: ")
-
-        while True:
-            action = input("oq vc vai editar?(digite nome, email ou senha)")
-            match action:
-                case "email":
-                    new_edition = input("digite o novo email")
+        table = choose_table(connection)
+        if table:
+            uid = input("User ID to edit: ")
+            while True:
+                col = input("Field to edit (name, email, or password): ").lower()
+                if col in ['name', 'email', 'password']:
+                    val = input(f"Enter new {col}: ")
+                    UserEdit(uid, col, val, table).update(connection)
                     break
-                case "nome":
-                    new_edition = input("digite o novo nome")  
-                    action = "name"
-                    break
-                case "senha":
-                    action = "password"
-                    new_edition = input("digite a nova senha")
-                    break
-                case _:
-                    print("digite somente nome, senha ou email")
-        edituser(user_id, action, new_edition,table).edit(connection)
-
-
+                print("Invalid field. Use 'name', 'email', or 'password'.")
 
     elif choice == '7':
-        table = chosetable()
-        user_id = int(input("Digite o ID do usuário a ser deletado: "))
-        userdelete(user_id, table).delete(connection)
+        table = choose_table(connection)
+        if table:
+            try:
+                uid = int(input("User ID to delete: "))
+                UserDelete(uid, table).delete(connection)
+            except ValueError:
+                print("Error: ID must be a number.")
 
     elif choice == '8':
-        table = chosetable()
-        user_email = input("Digite o email do usuário a ser lido: ")
-        readuser(user_email, table).read(connection)
+        table = choose_table(connection)
+        if table:
+            email = input("Enter email to search: ")
+            user = UserRead(email, table).read(connection)
+            if user:
+                print(f"User Data: {user}")
+            else:
+                print("User not found.")
 
     elif choice == 's':
         connection.close()
-        print("Conexão fechada. Saindo...")
+        print("Connection closed. Goodbye!")
         break
 
     else:
-        print("Opção inválida. Tente novamente.")
+        print("Invalid option. Please try again.")

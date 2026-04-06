@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access - CRUDEMANAGER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f6; min-height: 100vh; display: flex; align-items: center; }
+        .auth-card { width: 100%; max-width: 480px; margin: auto; border: none; border-radius: 15px; }
+        .nav-tabs { border-bottom: none; margin-bottom: 25px; }
+        .nav-link { color: #6c757d; font-weight: 500; border: none !important; transition: 0.3s; }
+        .nav-link.active { color: #0d6efd !important; border-bottom: 3px solid #0d6efd !important; background: none !important; }
+        
+        .password-requirements { font-size: 0.85rem; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #dee2e6; }
+        .requirement { transition: all 0.2s ease; color: #6c757d; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .requirement.valid { color: #198754 !important; font-weight: 500; }
+        .requirement.invalid { color: #dc3545 !important; }
+        .status-icon { width: 16px; display: inline-block; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="card auth-card shadow-lg p-4">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <ul class="nav nav-tabs nav-fill" id="authTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane" type="button">Login</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" 
+                        id="register-tab" 
+                        data-bs-toggle="tab" 
+                        data-bs-target="#register-pane" 
+                        type="button"
+                        data-auto-open="{{ 'true' if name or email else 'false' }}">
+                    Register
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="login-pane">
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="example@mail.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <label class="form-label">Password</label>
+                            <a href="{{ url_for('forgot') }}" class="small text-decoration-none text-muted">Forgot?</a>
+                        </div>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Sign In</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="register-pane">
+                <form action="{{ url_for('register') }}" method="POST" id="registerForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="John Doe" 
+                               value="{{ name if name else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="john@example.com" 
+                               value="{{ email if email else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" id="reg_password" class="form-control" placeholder="Create strong password" required>
+                        
+                        <div class="password-requirements mt-2">
+                            <div id="req-length" class="requirement"><span class="status-icon">✖</span> 12+ characters</div>
+                            <div id="req-upper" class="requirement"><span class="status-icon">✖</span> One uppercase letter</div>
+                            <div id="req-lower" class="requirement"><span class="status-icon">✖</span> One lowercase letter</div>
+                            <div id="req-number" class="requirement"><span class="status-icon">✖</span> One number</div>
+                            <div id="req-special" class="requirement"><span class="status-icon">✖</span> One special character</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" name="confirm_password" id="reg_confirm" class="form-control" placeholder="Repeat password" required>
+                        <div class="invalid-feedback">Passwords do not match.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const registerForm = document.getElementById("registerForm");
+    const password = document.getElementById("reg_password");
+    const confirmPassword = document.getElementById("reg_confirm");
+
+    const requirements = {
+        length: document.getElementById("req-length"),
+        upper: document.getElementById("req-upper"),
+        lower: document.getElementById("req-lower"),
+        number: document.getElementById("req-number"),
+        special: document.getElementById("req-special")
+    };
+
+    function updateChecklist() {
+        const val = password.value;
+        const rules = {
+            length: val.length >= 12,
+            upper: /[A-Z]/.test(val),
+            lower: /[a-z]/.test(val),
+            number: /[0-9]/.test(val),
+            special: /[\W_]/.test(val)
+        };
+
+        Object.keys(rules).forEach(key => {
+            const el = requirements[key];
+            if (rules[key]) {
+                el.classList.remove("text-muted", "invalid");
+                el.classList.add("valid");
+                el.querySelector(".status-icon").innerText = "✔";
+            } else {
+                el.classList.remove("valid");
+                el.classList.add("text-muted");
+                el.querySelector(".status-icon").innerText = "✖";
+            }
+        });
+
+        return Object.values(rules).every(Boolean);
+    }
+
+    function validateMatch() {
+        if (password.value !== confirmPassword.value || confirmPassword.value === "") {
+            confirmPassword.classList.add("is-invalid");
+            confirmPassword.classList.remove("is-valid");
+            return false;
+        } else {
+            confirmPassword.classList.remove("is-invalid");
+            confirmPassword.classList.add("is-valid");
+            return true;
+        }
+    }
+
+    password.addEventListener('input', () => {
+        updateChecklist();
+        if (confirmPassword.value !== "") validateMatch();
+    });
+
+    confirmPassword.addEventListener('input', validateMatch);
+
+    registerForm.addEventListener('submit', function(event) {
+        const isStrong = updateChecklist();
+        const isMatch = validateMatch();
+
+        if (!isStrong || !isMatch) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (!isStrong) {
+                Object.values(requirements).forEach(el => {
+                    if (!el.classList.contains("valid")) el.classList.add("invalid");
+                });
+            }
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const registerTabBtn = document.querySelector('#register-tab');
+        if (registerTabBtn && registerTabBtn.getAttribute('data-auto-open') === 'true') {
+            const tabInstance = new bootstrap.Tab(registerTabBtn);
+            tabInstance.show();
+        }
+    });
+</script>
+
+</body>
+</html>
