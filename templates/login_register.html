@@ -20,14 +20,13 @@
     </style>
 </head>
 <body>
-
 <div class="container py-5">
     <div class="card auth-card shadow-lg p-4">
-        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
+                {% set alert_map = {'error': 'danger', 'success': 'success', 'info': 'info', 'warning': 'warning'} %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ alert_map.get(category, 'secondary') }} alert-dismissible fade show" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -73,13 +72,11 @@
                 <form action="{{ url_for('register') }}" method="POST" id="registerForm" novalidate>
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="name" class="form-control" placeholder="John Doe" 
-                               value="{{ name if name else '' }}" required>
+                        <input type="text" name="name" class="form-control" placeholder="John Doe" value="{{ name | default('', true) }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-control" placeholder="john@example.com" 
-                               value="{{ email if email else '' }}" required>
+                        <input type="email" name="email" class="form-control" placeholder="john@example.com" value="{{ email | default('', true) }}" required>
                     </div>
                     
                     <div class="mb-3">
@@ -112,86 +109,86 @@
 
 <script>
     const registerForm = document.getElementById("registerForm");
-    const password = document.getElementById("reg_password");
-    const confirmPassword = document.getElementById("reg_confirm");
+    const passwordInput = document.getElementById("reg_password");
+    const confirmPasswordInput = document.getElementById("reg_confirm");
 
-    const requirements = {
-        length: document.getElementById("req-length"),
-        upper: document.getElementById("req-upper"),
-        lower: document.getElementById("req-lower"),
-        number: document.getElementById("req-number"),
-        special: document.getElementById("req-special")
-    };
-
-    function updateChecklist() {
-        const val = password.value;
-        const rules = {
-            length: val.length >= 12,
-            upper: /[A-Z]/.test(val),
-            lower: /[a-z]/.test(val),
-            number: /[0-9]/.test(val),
-            special: /[\W_]/.test(val)
+    if (registerForm && passwordInput && confirmPasswordInput) {
+        const requirements = {
+            length: document.getElementById("req-length"),
+            upper: document.getElementById("req-upper"),
+            lower: document.getElementById("req-lower"),
+            number: document.getElementById("req-number"),
+            special: document.getElementById("req-special")
         };
 
-        Object.keys(rules).forEach(key => {
-            const el = requirements[key];
-            if (rules[key]) {
-                el.classList.remove("text-muted", "invalid");
-                el.classList.add("valid");
-                el.querySelector(".status-icon").innerText = "✔";
-            } else {
-                el.classList.remove("valid");
-                el.classList.add("text-muted");
-                el.querySelector(".status-icon").innerText = "✖";
+        function updateChecklist() {
+            const value = passwordInput.value;
+            const rules = {
+                length: value.length >= 12,
+                upper: /[A-Z]/.test(value),
+                lower: /[a-z]/.test(value),
+                number: /[0-9]/.test(value),
+                special: /[\W_]/.test(value)
+            };
+
+            Object.keys(rules).forEach((key) => {
+                const requirement = requirements[key];
+                if (rules[key]) {
+                    requirement.classList.remove("text-muted", "invalid");
+                    requirement.classList.add("valid");
+                    requirement.querySelector(".status-icon").textContent = "✔";
+                    return;
+                }
+
+                requirement.classList.remove("valid");
+                requirement.classList.add("text-muted");
+                requirement.querySelector(".status-icon").textContent = "✖";
+            });
+
+            return Object.values(rules).every(Boolean);
+        }
+
+        function validateMatch() {
+            const matches = passwordInput.value === confirmPasswordInput.value && confirmPasswordInput.value !== "";
+            confirmPasswordInput.classList.toggle("is-invalid", !matches);
+            confirmPasswordInput.classList.toggle("is-valid", matches);
+            return matches;
+        }
+
+        passwordInput.addEventListener("input", () => {
+            updateChecklist();
+            if (confirmPasswordInput.value !== "") {
+                validateMatch();
             }
         });
 
-        return Object.values(rules).every(Boolean);
-    }
+        confirmPasswordInput.addEventListener("input", validateMatch);
 
-    function validateMatch() {
-        if (password.value !== confirmPassword.value || confirmPassword.value === "") {
-            confirmPassword.classList.add("is-invalid");
-            confirmPassword.classList.remove("is-valid");
-            return false;
-        } else {
-            confirmPassword.classList.remove("is-invalid");
-            confirmPassword.classList.add("is-valid");
-            return true;
-        }
-    }
+        registerForm.addEventListener("submit", (event) => {
+            const isStrong = updateChecklist();
+            const isMatch = validateMatch();
 
-    password.addEventListener('input', () => {
-        updateChecklist();
-        if (confirmPassword.value !== "") validateMatch();
-    });
+            if (!isStrong || !isMatch) {
+                event.preventDefault();
+                event.stopPropagation();
 
-    confirmPassword.addEventListener('input', validateMatch);
-
-    registerForm.addEventListener('submit', function(event) {
-        const isStrong = updateChecklist();
-        const isMatch = validateMatch();
-
-        if (!isStrong || !isMatch) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            if (!isStrong) {
-                Object.values(requirements).forEach(el => {
-                    if (!el.classList.contains("valid")) el.classList.add("invalid");
-                });
+                if (!isStrong) {
+                    Object.values(requirements).forEach((requirement) => {
+                        if (!requirement.classList.contains("valid")) {
+                            requirement.classList.add("invalid");
+                        }
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const registerTabBtn = document.querySelector('#register-tab');
-        if (registerTabBtn && registerTabBtn.getAttribute('data-auto-open') === 'true') {
-            const tabInstance = new bootstrap.Tab(registerTabBtn);
-            tabInstance.show();
+    document.addEventListener("DOMContentLoaded", () => {
+        const registerTabBtn = document.querySelector("#register-tab");
+        if (registerTabBtn && registerTabBtn.getAttribute("data-auto-open") === "true") {
+            new bootstrap.Tab(registerTabBtn).show();
         }
     });
 </script>
-
 </body>
 </html>

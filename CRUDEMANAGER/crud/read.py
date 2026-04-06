@@ -1,64 +1,52 @@
-import psycopg2
-from psycopg2 import Error
+from psycopg2 import Error, sql
+
 
 class UserRead:
     def __init__(self, user_email, table):
         self.user_email = user_email
         self.table = table
 
-    def read_password(self, connection):
-        try:
-            cursor = connection.cursor()
-            select_query = f"SELECT password FROM {self.table} WHERE email = %s"
-            cursor.execute(select_query, (self.user_email,))
-            user = cursor.fetchone()
-            return user[0] if user else None
-        except (Exception, Error) as error:
-            print("Error while reading user password:", error)
+    def _fetchone(self, connection, query):
+        if not connection:
             return None
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query, (self.user_email,))
+                return cursor.fetchone()
+        except (Exception, Error) as error:
+            print("Error while reading user data:", error)
+            return None
+
+    def read_password(self, connection):
+        query = sql.SQL("SELECT password FROM {} WHERE email = %s").format(sql.Identifier(self.table))
+        user = self._fetchone(connection, query)
+        return user[0] if user else None
 
     def read_email(self, connection):
-        try:
-            cursor = connection.cursor()
-            select_query = f"SELECT email FROM {self.table} WHERE email = %s"
-            cursor.execute(select_query, (self.user_email,))
-            user = cursor.fetchone()
-            return user[0] if user else None
-        except (Exception, Error) as error:
-            print("Error while reading user email:", error)
-            return None
-        
+        query = sql.SQL("SELECT email FROM {} WHERE email = %s").format(sql.Identifier(self.table))
+        user = self._fetchone(connection, query)
+        return user[0] if user else None
+
     def read_id(self, connection):
-        try:
-            cursor = connection.cursor()
-            select_query = f"SELECT id FROM {self.table} WHERE email = %s"
-            cursor.execute(select_query, (self.user_email,))
-            user = cursor.fetchone()
-            return user[0] if user else None
-        except (Exception, Error) as error:
-            print("Error while reading user ID:", error)
-            return None
-        
+        query = sql.SQL("SELECT id FROM {} WHERE email = %s").format(sql.Identifier(self.table))
+        user = self._fetchone(connection, query)
+        return user[0] if user else None
+
     def is_verified(self, connection):
-        try:
-            cursor = connection.cursor()
-            select_query = f"SELECT verification_token FROM {self.table} WHERE email = %s"
-            cursor.execute(select_query, (self.user_email,))
-            user = cursor.fetchone()
-            return True if user and user[0] == 'verified' else False
-        except (Exception, Error) as error:
-            print("Error while checking verification status:", error)
-            return False
+        query = sql.SQL("SELECT verification_token FROM {} WHERE email = %s").format(
+            sql.Identifier(self.table)
+        )
+        user = self._fetchone(connection, query)
+        return bool(user and user[0] == "verified")
+
+    def read(self, connection):
+        query = sql.SQL("SELECT id, name, email FROM {} WHERE email = %s").format(sql.Identifier(self.table))
+        return self._fetchone(connection, query)
 
     def read_profile(self, connection):
-        try:
-            cursor = connection.cursor()
-            select_query = f"SELECT id, name, email FROM {self.table} WHERE email = %s"
-            cursor.execute(select_query, (self.user_email,))
-            user = cursor.fetchone()
-            if user:
-                print(f"ID: {user[0]}, Name: {user[1]}, Email: {user[2]}")
-            else:
-                print("User not found.")
-        except (Exception, Error) as error:
-            print("Error while reading user profile:", error)
+        user = self.read(connection)
+        if user:
+            print(f"ID: {user[0]}, Name: {user[1]}, Email: {user[2]}")
+        else:
+            print("User not found.")

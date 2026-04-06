@@ -14,6 +14,19 @@
                 <div class="card-body p-4 text-center">
                     <h2 class="fw-bold">Forgot Password?</h2>
                     <p class="text-muted">Enter your email and we'll send you a reset link.</p>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% set alert_map = {'error': 'danger', 'success': 'success', 'info': 'info', 'warning': 'warning'} %}
+                            <div class="text-start mt-3">
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ alert_map.get(category, 'secondary') }} py-2" role="alert">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
                     
                     <form action="{{ url_for('forgot') }}" method="POST" class="text-start mt-4">
                         <div class="mb-3">

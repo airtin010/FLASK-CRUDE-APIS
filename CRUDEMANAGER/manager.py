@@ -4,13 +4,10 @@ from crud.update import UserEdit
 from crud.delete import UserDelete
 from crud.read import UserRead
 
-connection = connect()
+EDITABLE_FIELDS = {"name", "email", "password"}
 
-if not connection:
-    print("Failed to establish database connection. Exiting...")
-    exit()
 
-while True:
+def show_menu():
     print("\n--- CRUDEMANAGER System ---")
     print("1. Create Table")
     print("2. Delete Table")
@@ -22,69 +19,109 @@ while True:
     print("8. Read User (by Email)")
     print("s. Exit")
 
-    choice = input("\nSelect an option: ").lower()
 
-    if choice == '1':
-        name = input("Enter table name to create (or 's' to cancel): ")
-        if name != 's':
-            create_table(connection, name)
+def handle_create_table(connection):
+    name = input("Enter table name to create (or 's' to cancel): ").strip()
+    if name and name != "s":
+        create_table(connection, name)
 
-    elif choice == '2':
-        table = choose_table(connection)
-        if table:
-            delete_table(connection, table)
 
-    elif choice == '3':
-        show_tables(connection)
+def handle_delete_table(connection):
+    table = choose_table(connection)
+    if table:
+        delete_table(connection, table)
 
-    elif choice == '4':
-        table = choose_table(connection)
-        if table:
-            get_table_content(connection, table)
 
-    elif choice == '5':
-        table = choose_table(connection)
-        if table:
-            name = input("User Name: ")
-            email = input("User Email: ")
-            pwd = input("User Password: ")
-            UserAdd(name, email, pwd, table).add(connection)
+def handle_show_table_content(connection):
+    table = choose_table(connection)
+    if table:
+        get_table_content(connection, table)
 
-    elif choice == '6':
-        table = choose_table(connection)
-        if table:
-            uid = input("User ID to edit: ")
-            while True:
-                col = input("Field to edit (name, email, or password): ").lower()
-                if col in ['name', 'email', 'password']:
-                    val = input(f"Enter new {col}: ")
-                    UserEdit(uid, col, val, table).update(connection)
-                    break
-                print("Invalid field. Use 'name', 'email', or 'password'.")
 
-    elif choice == '7':
-        table = choose_table(connection)
-        if table:
-            try:
-                uid = int(input("User ID to delete: "))
-                UserDelete(uid, table).delete(connection)
-            except ValueError:
-                print("Error: ID must be a number.")
+def handle_add_user(connection):
+    table = choose_table(connection)
+    if not table:
+        return
 
-    elif choice == '8':
-        table = choose_table(connection)
-        if table:
-            email = input("Enter email to search: ")
-            user = UserRead(email, table).read(connection)
-            if user:
-                print(f"User Data: {user}")
-            else:
-                print("User not found.")
+    name = input("User Name: ").strip()
+    email = input("User Email: ").strip()
+    password = input("User Password: ")
+    UserAdd(name, email, password, table).add(connection)
 
-    elif choice == 's':
-        connection.close()
-        print("Connection closed. Goodbye!")
-        break
 
+def handle_edit_user(connection):
+    table = choose_table(connection)
+    if not table:
+        return
+
+    user_id = input("User ID to edit: ").strip()
+    while True:
+        column = input("Field to edit (name, email, or password): ").strip().lower()
+        if column in EDITABLE_FIELDS:
+            value = input(f"Enter new {column}: ")
+            UserEdit(user_id, column, value, table).update(connection)
+            return
+        print("Invalid field. Use 'name', 'email', or 'password'.")
+
+
+def handle_delete_user(connection):
+    table = choose_table(connection)
+    if not table:
+        return
+
+    try:
+        user_id = int(input("User ID to delete: "))
+        UserDelete(user_id, table).delete(connection)
+    except ValueError:
+        print("Error: ID must be a number.")
+
+
+def handle_read_user(connection):
+    table = choose_table(connection)
+    if not table:
+        return
+
+    email = input("Enter email to search: ").strip()
+    user = UserRead(email, table).read(connection)
+    if user:
+        print(f"User Data: {user}")
     else:
-        print("Invalid option. Please try again.")
+        print("User not found.")
+
+
+def main():
+    connection = connect()
+    if not connection:
+        print("Failed to establish database connection. Exiting...")
+        return
+
+    while True:
+        show_menu()
+        choice = input("\nSelect an option: ").strip().lower()
+
+        if choice == "1":
+            handle_create_table(connection)
+        elif choice == "2":
+            handle_delete_table(connection)
+        elif choice == "3":
+            show_tables(connection)
+        elif choice == "4":
+            handle_show_table_content(connection)
+        elif choice == "5":
+            handle_add_user(connection)
+        elif choice == "6":
+            handle_edit_user(connection)
+        elif choice == "7":
+            handle_delete_user(connection)
+        elif choice == "8":
+            handle_read_user(connection)
+        elif choice == "s":
+            connection.close()
+            print("Connection closed. Goodbye!")
+            break
+        else:
+            print("Invalid option. Please try again.")
+
+
+if __name__ == "__main__":
+    main()
